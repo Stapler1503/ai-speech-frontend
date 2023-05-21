@@ -1,12 +1,11 @@
 import { Injectable } from '@angular/core';
-import {HttpClient} from "@angular/common/http";
-import {Observable} from "rxjs";
+import { HttpClient, HttpHeaders } from "@angular/common/http";
+import { Observable } from "rxjs";
 
 @Injectable({
   providedIn: 'root'
 })
 export class ChatService {
-
   constructor(private http: HttpClient) { }
 
   public getAvailableModels(): Observable<any> {
@@ -14,7 +13,10 @@ export class ChatService {
   }
 
   public transcriptAudioIntoText(audioFile: File): Observable<any> {
-    const body = { audioFile }
-    return this.http.post('http://localhost:3000/chat/speech-recognize', body);
+    const formData = new FormData();
+    const headers = new HttpHeaders()
+    formData.append('audioFile', audioFile, 'filename');
+
+    return this.http.post('http://localhost:3000/chat/speech-recognize', formData, { headers } );
   }
 }

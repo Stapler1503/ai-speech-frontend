@@ -2,4 +2,12 @@
   display: flex;
   justify-content: space-evenly;
   margin: 50px;
+
+  .column {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    margin: 50px;
+    min-height: 200px;
+  }
 }

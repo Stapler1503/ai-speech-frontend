@@ -1,5 +1,5 @@
-import { Component } from '@angular/core';
-import {ChatService} from "./chat.service";
+import { Component, OnInit } from '@angular/core';
+import { ChatService } from "./chat.service";
 
 @Component({
   selector: 'app-chat',
@@ -8,8 +8,32 @@ import {ChatService} from "./chat.service";
 })
 export class ChatComponent {
   public recordedChunks: Blob[] = [];
+  public recordInProgress = false;
+  public mediaRecorder: MediaRecorder = new MediaRecorder(new MediaStream);
 
-  constructor(private chatService: ChatService) { }
+  constructor(private chatService: ChatService) {
+    navigator.mediaDevices
+      .getUserMedia({ video: false, audio: true })
+      .then(stream => {
+        this.mediaRecorder = new MediaRecorder(stream);
+        this.mediaRecorder.ondataavailable = ({ data }) => this.recordedChunks.push(data);
+        this.mediaRecorder.onstop = (event) => {
+          const file = new File(this.recordedChunks,'record.webm', { type : 'audio/ogg; codecs=opus' });
+          this.postRecord(file);
+          // this.downloadFile(file);
+        }
+      });
+  }
+
+  public startRecording(): void {
+    this.mediaRecorder.start();
+    this.recordInProgress = true;
+  }
+
+  public stopRecording(): void {
+    this.mediaRecorder.stop();
+    this.recordInProgress = false;
+  }
 
   public getModels(): void {
     this.chatService.getAvailableModels()
@@ -18,41 +42,24 @@ export class ChatComponent {
       });
   }
 
-  public recordVoice() {
-    navigator.mediaDevices
-      .getUserMedia({ video: false, audio: true })
-      .then(stream => {
-        console.log('record', stream);
-        const mediaRecorder = new MediaRecorder(stream);
-        mediaRecorder.ondataavailable = ({ data }: BlobEvent) => {
-          console.log('data', data);
-          if (data.size > 0) {
-            this.recordedChunks.push(data);
-          } else {
-            // ...
-          }
-        };
-        mediaRecorder.start();
-        setTimeout(() => {
-          mediaRecorder.stop();
-          // const file = new File(this.recordedChunks,'my-file.webm',
-          //   { type: 'audio/webm' });
-          // console.log('file', file);
-          const file = new Blob(this.recordedChunks, {
-            'type': 'audio/webm'
-          });
-          const blobURL = URL.createObjectURL(file);
-          var link = document.createElement("a"); // Or maybe get it from the current document
-          link.href = blobURL;
-          link.download = "default-name.webm";
-          link.innerHTML = "Click here to download the file";
-          document.body.appendChild(link);
-          // this.chatService.transcriptAudioIntoText(file)
-          //   .subscribe(res => {
-          //     console.log('transcribed audio', res);
-          //   })
-          return;
-        }, 5000);
-      });
+  public postRecord(file: File): void {
+    this.chatService.transcriptAudioIntoText(file)
+      .subscribe(res => {
+        console.log('transcribed audio', res);
+      },
+    err => {
+      console.log('postRecord err', err);
+    });
+  }
+
+  public downloadFile(file: File): void {
+    const blobURL = URL.createObjectURL(file);
+    var link = document.createElement("a");
+    link.href = blobURL;
+    link.download = "default-name.webm";
+    link.innerHTML = "Click here to download the file";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 }

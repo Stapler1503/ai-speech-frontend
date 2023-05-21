@@ -1,13 +1,26 @@
 <div class="main-wrapper">
-  <button (click)="getModels()"
-          mat-raised-button
-          color="primary">
-    Get available models data
-  </button>
+  <div class="column">
+    <button [disabled]="recordInProgress"
+            (click)="startRecording()"
+            color="warn"
+            class="record"
+            mat-raised-button>
+      Start record
+    </button>
+    <button [disabled]="!recordInProgress"
+            (click)="stopRecording()"
+            color="warn"
+            class="stop"
+            mat-raised-button>
+      Stop record
+    </button>
+  </div>
 
-  <button (click)="recordVoice()"
-          mat-raised-button
-          color="primary">
-    Record voice to speak with chat
-  </button>
+  <div class="column">
+    <button (click)="getModels()"
+            mat-raised-button
+            color="primary">
+      Get available models data
+    </button>
+  </div>
 </div>
