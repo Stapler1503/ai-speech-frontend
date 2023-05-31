@@ -1,13 +1,13 @@
 <div class="main-wrapper">
   <div class="column">
-    <button [disabled]="recordInProgress"
+    <button *ngIf="!recordInProgress"
             (click)="startRecording()"
             color="warn"
             class="record"
             mat-raised-button>
       Start record
     </button>
-    <button [disabled]="!recordInProgress"
+    <button *ngIf="recordInProgress"
             (click)="stopRecording()"
             color="warn"
             class="stop"
@@ -16,13 +16,9 @@
     </button>
   </div>
 
-<!--  <div class="column">-->
-<!--    <button (click)="getModels()"-->
-<!--            mat-raised-button-->
-<!--            color="primary">-->
-<!--      Get available models data-->
-<!--    </button>-->
-<!--  </div>-->
-
-  <div>{{ chatAnswer }}</div>
+  <div class="chat-text">
+    <p>
+      {{ chatAnswer }}
+    </p>
+  </div>
 </div>
