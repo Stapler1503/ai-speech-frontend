@@ -1,26 +1,31 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from '@angular/core';
 import { ChatService } from "./chat.service";
+import { map, switchMap } from "rxjs";
 
 @Component({
   selector: 'app-chat',
   templateUrl: './chat.component.html',
-  styleUrls: ['./chat.component.scss']
+  styleUrls: ['./chat.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ChatComponent {
   public recordedChunks: Blob[] = [];
   public recordInProgress = false;
   public mediaRecorder: MediaRecorder = new MediaRecorder(new MediaStream);
+  public chatAnswer = 'Text placeholder';
 
-  constructor(private chatService: ChatService) {
+  constructor(
+    private chatService: ChatService,
+    private cdr: ChangeDetectorRef
+  ) {
     navigator.mediaDevices
       .getUserMedia({ video: false, audio: true })
       .then(stream => {
         this.mediaRecorder = new MediaRecorder(stream);
         this.mediaRecorder.ondataavailable = ({ data }) => this.recordedChunks.push(data);
-        this.mediaRecorder.onstop = (event) => {
+        this.mediaRecorder.onstop = () => {
           const file = new File(this.recordedChunks,'record.webm', { type : 'audio/ogg; codecs=opus' });
           this.postRecord(file);
-          // this.downloadFile(file);
         }
       });
   }
@@ -35,31 +40,19 @@ export class ChatComponent {
     this.recordInProgress = false;
   }
 
-  public getModels(): void {
-    this.chatService.getAvailableModels()
-      .subscribe(res => {
-        console.log('models', res);
-      });
-  }
-
   public postRecord(file: File): void {
     this.chatService.transcriptAudioIntoText(file)
-      .subscribe(res => {
-        console.log('transcribed audio', res);
-      },
-    err => {
-      console.log('postRecord err', err);
-    });
-  }
-
-  public downloadFile(file: File): void {
-    const blobURL = URL.createObjectURL(file);
-    var link = document.createElement("a");
-    link.href = blobURL;
-    link.download = "default-name.webm";
-    link.innerHTML = "Click here to download the file";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      .pipe(
+        switchMap(res =>
+          this.chatService.sendMessageToChat(res.text))
+      )
+      .subscribe(
+        (res: any) => {
+          console.log('chat has responded', res.choices);
+          this.chatAnswer = res.choices[0].message.content;
+          this.cdr.detectChanges();
+        },
+        err => console.log('err', err)
+    );
   }
 }

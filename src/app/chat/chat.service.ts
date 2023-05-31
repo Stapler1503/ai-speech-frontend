@@ -8,13 +8,14 @@ import { Observable } from "rxjs";
 export class ChatService {
   constructor(private http: HttpClient) { }
 
-  public getAvailableModels(): Observable<any> {
-    return this.http.get('http://localhost:3000/chat/models',{ headers: {} });
+  public sendMessageToChat(message: string) {
+    return this.http.post('http://localhost:3000/chat',{ message }, { headers: {} });
   }
 
   public transcriptAudioIntoText(audioFile: File): Observable<any> {
+    const headers = new HttpHeaders();
     const formData = new FormData();
-    const headers = new HttpHeaders()
+    headers.append('content-type', 'multipart/form-data');
     formData.append('audioFile', audioFile, 'filename');
 
     return this.http.post('http://localhost:3000/chat/speech-recognize', formData, { headers } );
